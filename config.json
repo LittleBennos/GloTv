@@ -1,0 +1,7 @@
+{
+  "slidesFolder": "C:\\GloTV",
+  "slideDuration": 10000,
+  "pollInterval": 15000,
+  "transitionDuration": 1000,
+  "libreOfficePath": "C:\\Program Files\\LibreOffice\\program\\soffice.exe"
+}

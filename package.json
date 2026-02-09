@@ -1,0 +1,16 @@
+{
+  "name": "glotv",
+  "version": "1.0.0",
+  "description": "Lightweight Electron digital signage app — displays PowerPoint slides full-screen",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "set GLOTV_DEV=1 && electron ."
+  },
+  "author": "LittleBennos",
+  "license": "MIT",
+  "dependencies": {
+    "electron": "^28.0.0",
+    "pdfjs-dist": "^4.0.0"
+  }
+}

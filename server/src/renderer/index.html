@@ -6,163 +6,290 @@
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
-      font-family: 'Segoe UI', sans-serif;
+      font-family: 'Segoe UI', Tahoma, sans-serif;
       background: #1a1a2e;
-      color: #eee;
-      padding: 20px;
+      color: #e0e0e0;
+      padding: 24px;
+      user-select: none;
     }
-    h1 { color: #e94560; margin-bottom: 4px; font-size: 22px; }
-    .subtitle { color: #777; font-size: 13px; margin-bottom: 20px; }
+    h1 { color: #e94560; font-size: 22px; margin-bottom: 20px; }
+    h2 { color: #e94560; font-size: 16px; margin: 20px 0 10px; border-bottom: 1px solid #333; padding-bottom: 6px; }
 
-    .section {
+    .row { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+    label { font-size: 13px; color: #aaa; min-width: 120px; }
+    input[type="text"], input[type="number"] {
       background: #16213e;
-      border-radius: 8px;
-      padding: 16px;
-      margin-bottom: 16px;
-    }
-    .section h2 { font-size: 15px; color: #e94560; margin-bottom: 10px; }
-
-    label { display: block; font-size: 13px; color: #aaa; margin-bottom: 4px; }
-    input[type="number"], input[type="text"], input[type="time"] {
-      background: #0f3460;
       border: 1px solid #333;
-      color: #eee;
+      color: #e0e0e0;
       padding: 6px 10px;
       border-radius: 4px;
-      font-size: 14px;
-      width: 140px;
+      font-size: 13px;
     }
-    input[type="text"] { width: 100%; }
-
-    .row { display: flex; gap: 16px; align-items: end; flex-wrap: wrap; }
+    input[type="text"] { flex: 1; }
+    input[type="number"] { width: 70px; }
 
     button {
       background: #e94560;
-      color: #fff;
+      color: white;
       border: none;
-      padding: 8px 16px;
+      padding: 7px 16px;
       border-radius: 4px;
       cursor: pointer;
       font-size: 13px;
     }
-    button:hover { background: #c73550; }
-    button.secondary { background: #0f3460; }
-    button.secondary:hover { background: #1a4a8a; }
+    button:hover { background: #c73e54; }
+    button.secondary { background: #333; }
+    button.secondary:hover { background: #444; }
+    button.small { padding: 3px 8px; font-size: 11px; }
 
-    .file-list { list-style: none; }
-    .file-item {
+    .save-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: #16213e;
+      border-top: 1px solid #333;
+      padding: 12px 24px;
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+
+    #file-list { margin-bottom: 80px; }
+
+    .file-row {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
       padding: 8px 12px;
-      background: #0f3460;
+      background: #16213e;
       border-radius: 6px;
-      margin-bottom: 6px;
+      margin-bottom: 4px;
     }
-    .file-item .name { flex: 1; font-size: 14px; }
-    .file-item .controls { display: flex; gap: 6px; align-items: center; }
-    .file-item input[type="number"] { width: 80px; }
-    .file-item .toggle {
-      width: 36px; height: 20px;
-      background: #555; border-radius: 10px;
-      position: relative; cursor: pointer;
+    .file-row.inactive { opacity: 0.5; }
+    .file-name { flex: 1; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .file-duration { width: 60px; }
+
+    .toggle {
+      position: relative;
+      width: 36px;
+      height: 20px;
+      cursor: pointer;
+    }
+    .toggle input { display: none; }
+    .toggle .slider {
+      position: absolute;
+      inset: 0;
+      background: #333;
+      border-radius: 10px;
       transition: background 0.2s;
     }
-    .file-item .toggle.on { background: #4ecca3; }
-    .file-item .toggle::after {
+    .toggle .slider::before {
       content: '';
       position: absolute;
-      top: 2px; left: 2px;
-      width: 16px; height: 16px;
-      background: #fff;
+      width: 16px;
+      height: 16px;
+      left: 2px;
+      top: 2px;
+      background: white;
       border-radius: 50%;
       transition: transform 0.2s;
     }
-    .file-item .toggle.on::after { transform: translateX(16px); }
+    .toggle input:checked + .slider { background: #e94560; }
+    .toggle input:checked + .slider::before { transform: translateX(16px); }
 
-    .move-btn { background: transparent; color: #aaa; padding: 2px 6px; font-size: 16px; }
-    .move-btn:hover { color: #fff; }
-
-    .days { display: flex; gap: 4px; margin-top: 4px; }
-    .day-btn {
-      width: 36px; height: 28px;
-      border-radius: 4px;
-      font-size: 11px;
+    .status-msg {
+      position: fixed;
+      top: 10px;
+      right: 24px;
       background: #0f3460;
-      color: #777;
-      border: 1px solid #333;
-      cursor: pointer;
+      padding: 8px 16px;
+      border-radius: 4px;
+      font-size: 13px;
+      display: none;
     }
-    .day-btn.on { background: #4ecca3; color: #000; border-color: #4ecca3; }
+    .status-msg.show { display: block; }
 
-    .folder-path {
-      display: flex; gap: 8px; align-items: center; margin-bottom: 12px;
+    .empty-state {
+      text-align: center;
+      color: #555;
+      padding: 40px;
+      font-size: 14px;
     }
-    .folder-path span { color: #4ecca3; font-size: 13px; font-family: monospace; }
-
-    .save-bar {
-      position: fixed; bottom: 0; left: 0; right: 0;
-      background: #16213e;
-      padding: 12px 20px;
-      display: flex; justify-content: space-between; align-items: center;
-      border-top: 1px solid #333;
-    }
-    .save-bar .status { color: #4ecca3; font-size: 13px; }
   </style>
 </head>
 <body>
   <h1>📺 GloTv Server</h1>
-  <p class="subtitle">Manage your digital signage slideshow</p>
+  <div id="status-msg" class="status-msg"></div>
 
-  <div class="section">
-    <h2>Shared Folder</h2>
-    <div class="folder-path">
-      <span id="folderPath">—</span>
-      <button class="secondary" id="btnPickFolder">Change</button>
-      <button class="secondary" id="btnRefresh">Refresh Files</button>
-    </div>
+  <h2>Shared Folder</h2>
+  <div class="row">
+    <input type="text" id="folder-path" placeholder="Select shared drive folder..." readonly>
+    <button onclick="browseFolder()">Browse...</button>
+    <button class="secondary" onclick="refreshFiles()">Refresh</button>
   </div>
 
-  <div class="section">
-    <h2>Global Settings</h2>
-    <div class="row">
-      <div>
-        <label>Slide Duration (seconds)</label>
-        <input type="number" id="globalDuration" min="1" max="300" value="10">
-      </div>
-    </div>
+  <h2>Global Settings</h2>
+  <div class="row">
+    <label>Slide Duration (s)</label>
+    <input type="number" id="slide-duration" min="1" max="300" value="10">
+  </div>
+  <div class="row">
+    <label>Schedule Start</label>
+    <input type="number" id="schedule-start" min="0" max="23" value="7">
+    <label style="min-width:auto">End</label>
+    <input type="number" id="schedule-end" min="0" max="23" value="19">
   </div>
 
-  <div class="section">
-    <h2>Display Schedule</h2>
-    <div class="row">
-      <div>
-        <label><input type="checkbox" id="scheduleEnabled"> Enable schedule</label>
-      </div>
-      <div>
-        <label>Start</label>
-        <input type="time" id="scheduleStart" value="08:00">
-      </div>
-      <div>
-        <label>End</label>
-        <input type="time" id="scheduleEnd" value="18:00">
-      </div>
-    </div>
-    <label style="margin-top:8px">Active Days</label>
-    <div class="days" id="daysContainer"></div>
-  </div>
-
-  <div class="section">
-    <h2>Presentations</h2>
-    <ul class="file-list" id="fileList"></ul>
-    <p id="noFiles" style="color:#555;font-size:13px;display:none;">No .pptx files found in the shared folder.</p>
+  <h2>Files</h2>
+  <div id="file-list">
+    <div class="empty-state">Select a folder to see PPTX files</div>
   </div>
 
   <div class="save-bar">
-    <span class="status" id="saveStatus"></span>
-    <button id="btnSave">💾 Save Config</button>
+    <button onclick="saveAll()">💾 Save Config</button>
   </div>
 
-  <script src="admin.js"></script>
+  <script>
+    let slidesFolder = '';
+    let files = []; // { name, active, duration, order }
+
+    async function init() {
+      const settings = await window.glotv.getSettings();
+      if (settings.slidesFolder) {
+        slidesFolder = settings.slidesFolder;
+        document.getElementById('folder-path').value = slidesFolder;
+        await loadExistingConfig();
+        await refreshFiles();
+      }
+    }
+
+    async function browseFolder() {
+      const folder = await window.glotv.browseFolder();
+      if (folder) {
+        slidesFolder = folder;
+        document.getElementById('folder-path').value = folder;
+        await window.glotv.saveSettings({ slidesFolder: folder });
+        await loadExistingConfig();
+        await refreshFiles();
+      }
+    }
+
+    async function loadExistingConfig() {
+      if (!slidesFolder) return;
+      const config = await window.glotv.loadConfig(slidesFolder);
+      document.getElementById('slide-duration').value = config.slideDuration || 10;
+      if (config.schedule) {
+        document.getElementById('schedule-start').value = config.schedule.startHour ?? 7;
+        document.getElementById('schedule-end').value = config.schedule.endHour ?? 19;
+      }
+      if (config.files && config.files.length > 0) {
+        files = config.files.map((f, i) => ({
+          name: f.name,
+          active: f.active !== false,
+          duration: f.duration,
+          order: f.order ?? i,
+        }));
+        files.sort((a, b) => a.order - b.order);
+      }
+    }
+
+    async function refreshFiles() {
+      if (!slidesFolder) return;
+      const diskFiles = await window.glotv.scanFiles(slidesFolder);
+      const existing = new Map(files.map(f => [f.name.toLowerCase(), f]));
+
+      // Add new files not in config
+      for (const name of diskFiles) {
+        if (!existing.has(name.toLowerCase())) {
+          files.push({ name, active: true, duration: null, order: files.length });
+        }
+      }
+
+      // Remove files no longer on disk
+      const diskSet = new Set(diskFiles.map(f => f.toLowerCase()));
+      files = files.filter(f => diskSet.has(f.name.toLowerCase()));
+
+      // Re-order
+      files.forEach((f, i) => f.order = i);
+      renderFiles();
+    }
+
+    function renderFiles() {
+      const container = document.getElementById('file-list');
+      if (files.length === 0) {
+        container.innerHTML = '<div class="empty-state">No PPTX files found</div>';
+        return;
+      }
+
+      container.innerHTML = files.map((f, i) => `
+        <div class="file-row ${f.active ? '' : 'inactive'}" data-index="${i}">
+          <button class="small secondary" onclick="moveFile(${i}, -1)" ${i === 0 ? 'disabled' : ''}>▲</button>
+          <button class="small secondary" onclick="moveFile(${i}, 1)" ${i === files.length - 1 ? 'disabled' : ''}>▼</button>
+          <label class="toggle">
+            <input type="checkbox" ${f.active ? 'checked' : ''} onchange="toggleFile(${i}, this.checked)">
+            <span class="slider"></span>
+          </label>
+          <span class="file-name" title="${f.name}">${f.name}</span>
+          <input type="number" class="file-duration" min="1" max="300"
+            placeholder="—"
+            value="${f.duration != null ? f.duration : ''}"
+            onchange="setFileDuration(${i}, this.value)"
+            title="Per-file duration (seconds), blank = use global">
+        </div>
+      `).join('');
+    }
+
+    function moveFile(index, direction) {
+      const newIndex = index + direction;
+      if (newIndex < 0 || newIndex >= files.length) return;
+      [files[index], files[newIndex]] = [files[newIndex], files[index]];
+      files.forEach((f, i) => f.order = i);
+      renderFiles();
+    }
+
+    function toggleFile(index, active) {
+      files[index].active = active;
+      renderFiles();
+    }
+
+    function setFileDuration(index, value) {
+      files[index].duration = value ? parseInt(value) : null;
+    }
+
+    async function saveAll() {
+      if (!slidesFolder) {
+        showStatus('Select a folder first');
+        return;
+      }
+
+      const config = {
+        slideDuration: parseInt(document.getElementById('slide-duration').value) || 10,
+        schedule: {
+          startHour: parseInt(document.getElementById('schedule-start').value) || 7,
+          endHour: parseInt(document.getElementById('schedule-end').value) || 19,
+        },
+        transition: 'crossfade',
+        files: files.map((f, i) => ({
+          name: f.name,
+          active: f.active,
+          duration: f.duration,
+          order: i,
+        })),
+      };
+
+      await window.glotv.saveConfig(slidesFolder, config);
+      showStatus('Config saved ✓');
+    }
+
+    function showStatus(msg) {
+      const el = document.getElementById('status-msg');
+      el.textContent = msg;
+      el.classList.add('show');
+      setTimeout(() => el.classList.remove('show'), 2000);
+    }
+
+    init();
+  </script>
 </body>
 </html>

@@ -2,46 +2,70 @@ const { app, BrowserWindow, ipcMain, dialog } = require('electron');
 const path = require('path');
 const fs = require('fs');
 
-const localConfig = require(path.join(__dirname, '..', 'config.json'));
-
 let win;
+let settingsPath;
 
-function getSharedConfigPath() {
-  return path.join(localConfig.sharedFolder, 'config.json');
+function getSettingsPath() {
+  return path.join(app.getPath('userData'), 'server-settings.json');
 }
 
-function readSharedConfig() {
-  const p = getSharedConfigPath();
-  if (fs.existsSync(p)) {
-    try { return JSON.parse(fs.readFileSync(p, 'utf-8')); } catch { }
+function loadSettings() {
+  settingsPath = getSettingsPath();
+  try {
+    if (fs.existsSync(settingsPath)) {
+      return JSON.parse(fs.readFileSync(settingsPath, 'utf-8'));
+    }
+  } catch (err) {
+    console.error('Error loading settings:', err.message);
+  }
+  return { slidesFolder: '' };
+}
+
+function saveSettings(settings) {
+  fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
+}
+
+function loadConfig(slidesFolder) {
+  const configPath = path.join(slidesFolder, 'glotv-config.json');
+  try {
+    if (fs.existsSync(configPath)) {
+      return JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+    }
+  } catch (err) {
+    console.error('Error loading config:', err.message);
   }
   return {
-    version: 1,
-    globalSlideDuration: 10000,
-    schedule: { enabled: false, startTime: '08:00', endTime: '18:00', days: ['Mon','Tue','Wed','Thu','Fri'] },
+    slideDuration: 10,
+    schedule: { startHour: 7, endHour: 19 },
+    transition: 'crossfade',
     files: [],
   };
 }
 
-function writeSharedConfig(config) {
-  const folder = localConfig.sharedFolder;
-  if (!fs.existsSync(folder)) fs.mkdirSync(folder, { recursive: true });
-  fs.writeFileSync(getSharedConfigPath(), JSON.stringify(config, null, 2));
+function saveConfig(slidesFolder, config) {
+  const configPath = path.join(slidesFolder, 'glotv-config.json');
+  fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
 }
 
-function scanPptxFiles() {
-  const folder = localConfig.sharedFolder;
-  if (!fs.existsSync(folder)) return [];
-  return fs.readdirSync(folder)
-    .filter(f => f.toLowerCase().endsWith('.pptx') && !f.startsWith('~$'))
-    .sort();
+function scanPptxFiles(slidesFolder) {
+  if (!slidesFolder || !fs.existsSync(slidesFolder)) return [];
+  try {
+    return fs.readdirSync(slidesFolder)
+      .filter(f => f.toLowerCase().endsWith('.pptx') && !f.startsWith('~$'))
+      .sort();
+  } catch (err) {
+    console.error('Error scanning folder:', err.message);
+    return [];
+  }
 }
 
 function createWindow() {
   win = new BrowserWindow({
     width: 900,
     height: 700,
-    title: 'GloTv Server',
+    minWidth: 700,
+    minHeight: 500,
+    backgroundColor: '#1a1a2e',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
@@ -56,23 +80,35 @@ function createWindow() {
 app.whenReady().then(() => {
   createWindow();
 
-  ipcMain.handle('get-shared-folder', () => localConfig.sharedFolder);
+  ipcMain.handle('get-settings', () => loadSettings());
 
-  ipcMain.handle('get-config', () => readSharedConfig());
+  ipcMain.handle('browse-folder', async () => {
+    const result = await dialog.showOpenDialog(win, {
+      properties: ['openDirectory'],
+      title: 'Select Shared Drive Folder',
+    });
+    if (!result.canceled && result.filePaths.length > 0) {
+      return result.filePaths[0];
+    }
+    return null;
+  });
 
-  ipcMain.handle('save-config', (_e, config) => {
-    writeSharedConfig(config);
+  ipcMain.handle('save-settings', (_e, settings) => {
+    saveSettings(settings);
     return true;
   });
 
-  ipcMain.handle('scan-files', () => scanPptxFiles());
+  ipcMain.handle('load-config', (_e, slidesFolder) => {
+    return loadConfig(slidesFolder);
+  });
 
-  ipcMain.handle('pick-folder', async () => {
-    const result = await dialog.showOpenDialog(win, { properties: ['openDirectory'] });
-    if (result.canceled) return null;
-    localConfig.sharedFolder = result.filePaths[0];
-    fs.writeFileSync(path.join(__dirname, '..', 'config.json'), JSON.stringify(localConfig, null, 2));
-    return localConfig.sharedFolder;
+  ipcMain.handle('save-config', (_e, slidesFolder, config) => {
+    saveConfig(slidesFolder, config);
+    return true;
+  });
+
+  ipcMain.handle('scan-files', (_e, slidesFolder) => {
+    return scanPptxFiles(slidesFolder);
   });
 });
 

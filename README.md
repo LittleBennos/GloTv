@@ -5,8 +5,8 @@ Lightweight digital signage system for offices. Drop PowerPoint files on a share
 ## Architecture
 
 ```
-Shared Network Drive (\\server\GloTV\)
-  ├── config.json          ← written by Server, read by Clients
+Shared Network Drive (e.g. \\server\GloTV\)
+  ├── glotv-config.json    ← written by Server, read by Clients
   ├── Presentation1.pptx
   ├── Presentation2.pptx
   └── ...
@@ -29,9 +29,13 @@ npm install
 npm start
 ```
 
-- Configure which PPTX files to show, their order, duration, and schedule
-- Writes `config.json` to the shared drive folder
-- Run on one admin machine
+- Configure the shared drive folder path
+- See all PPTX files found in that folder
+- Toggle files active/inactive
+- Set slide order (up/down buttons)
+- Set global slide duration + per-file override
+- Set display schedule (start/end hours)
+- Writes `glotv-config.json` to the shared drive folder
 
 ## Client (Display App)
 
@@ -41,32 +45,32 @@ npm install
 npm start
 ```
 
-- Reads PPTX files + `config.json` from the shared drive
+- Reads PPTX files + `glotv-config.json` from the shared drive
 - Converts slides to PDF via LibreOffice, renders full-screen via PDF.js
+- Respects file order, active/inactive toggles, duration overrides, and schedule
+- Falls back to showing all files with default duration if no config found
 - Polls for changes and updates automatically
 - Press **ESC** to exit
 
-## Config Format
+Configure `client/config.json` with:
+- `slidesFolder` — path to the shared drive folder
+- `libreOfficePath` — path to LibreOffice executable
+- `slideDuration` — default slide duration in ms (fallback if no server config)
+- `pollInterval` — how often to check for changes (ms)
 
-The `config.json` on the shared drive (managed by Server) looks like:
+## Config Format (`glotv-config.json`)
+
+Written by the Server app to the shared drive folder:
 
 ```json
 {
-  "version": 1,
-  "globalSlideDuration": 10000,
-  "schedule": {
-    "enabled": false,
-    "startTime": "08:00",
-    "endTime": "18:00",
-    "days": ["Mon","Tue","Wed","Thu","Fri"]
-  },
+  "slideDuration": 10,
+  "schedule": { "startHour": 7, "endHour": 19 },
+  "transition": "crossfade",
   "files": [
-    {
-      "filename": "Welcome.pptx",
-      "active": true,
-      "slideDuration": null,
-      "order": 0
-    }
+    { "name": "welcome.pptx", "active": true, "duration": 15, "order": 0 },
+    { "name": "safety.pptx", "active": true, "duration": null, "order": 1 },
+    { "name": "old-notice.pptx", "active": false, "duration": null, "order": 2 }
   ]
 }
 ```

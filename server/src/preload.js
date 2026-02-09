@@ -1,9 +1,10 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('glotv', {
-  getSharedFolder: () => ipcRenderer.invoke('get-shared-folder'),
-  getConfig: () => ipcRenderer.invoke('get-config'),
-  saveConfig: (config) => ipcRenderer.invoke('save-config', config),
-  scanFiles: () => ipcRenderer.invoke('scan-files'),
-  pickFolder: () => ipcRenderer.invoke('pick-folder'),
+  getSettings: () => ipcRenderer.invoke('get-settings'),
+  browseFolder: () => ipcRenderer.invoke('browse-folder'),
+  saveSettings: (s) => ipcRenderer.invoke('save-settings', s),
+  loadConfig: (folder) => ipcRenderer.invoke('load-config', folder),
+  saveConfig: (folder, config) => ipcRenderer.invoke('save-config', folder, config),
+  scanFiles: (folder) => ipcRenderer.invoke('scan-files', folder),
 });

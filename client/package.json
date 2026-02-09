@@ -1,7 +1,7 @@
 {
-  "name": "glotv",
+  "name": "glotv-client",
   "version": "1.0.0",
-  "description": "Lightweight Electron digital signage app — displays PowerPoint slides full-screen",
+  "description": "GloTv display client — shows PowerPoint slides full-screen",
   "main": "src/main.js",
   "scripts": {
     "start": "electron .",

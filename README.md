@@ -1,59 +1,72 @@
 # GloTv
 
-Lightweight Electron digital signage app for offices. Drop PowerPoint files in a shared folder and GloTv displays them full-screen on a loop.
+Lightweight digital signage system for offices. Drop PowerPoint files on a shared network drive, manage them with the **Server** app, and display them full-screen with the **Client** app.
 
-## How it Works
+## Architecture
 
-1. Points at a folder containing `.pptx` files
-2. Converts each to PDF via LibreOffice headless
-3. Renders each slide full-screen using PDF.js
-4. Polls the folder for changes and auto-updates
+```
+Shared Network Drive (\\server\GloTV\)
+  ├── config.json          ← written by Server, read by Clients
+  ├── Presentation1.pptx
+  ├── Presentation2.pptx
+  └── ...
+```
+
+- **Server** — Admin app that manages the slideshow (one machine)
+- **Client** — Display app that shows slides full-screen (multiple machines/TVs)
+- **No networking** — the shared folder is the only communication layer
 
 ## Prerequisites
 
 - **Node.js** 18+
-- **LibreOffice** — install from https://www.libreoffice.org/download/
-  - Default install path: `C:\Program Files\LibreOffice\program\soffice.exe`
+- **LibreOffice** — https://www.libreoffice.org/download/ (used by Client for PPTX→PDF conversion)
 
-## Setup
+## Server (Admin App)
 
 ```powershell
-cd C:\Projects\GloTv
+cd server
 npm install
-```
-
-## Configuration
-
-Edit `config.json`:
-
-| Key | Default | Description |
-|-----|---------|-------------|
-| `slidesFolder` | `C:\GloTV` | Path to folder with .pptx files |
-| `slideDuration` | `10000` | Time per slide in ms |
-| `pollInterval` | `15000` | How often to check for file changes (ms) |
-| `transitionDuration` | `1000` | Crossfade duration in ms |
-| `libreOfficePath` | `C:\Program Files\LibreOffice\program\soffice.exe` | Path to LibreOffice |
-
-For network drives, use UNC paths: `\\\\server\\GloTV\\`
-
-## Run
-
-```powershell
 npm start
 ```
 
-Starts full-screen in kiosk mode. Press **ESC** to exit.
+- Configure which PPTX files to show, their order, duration, and schedule
+- Writes `config.json` to the shared drive folder
+- Run on one admin machine
 
-### Dev mode (windowed + DevTools)
+## Client (Display App)
 
 ```powershell
-npm run dev
+cd client
+npm install
+npm start
 ```
 
-## How it Works
+- Reads PPTX files + `config.json` from the shared drive
+- Converts slides to PDF via LibreOffice, renders full-screen via PDF.js
+- Polls for changes and updates automatically
+- Press **ESC** to exit
 
-- PPTX files are converted to PDF by LibreOffice headless
-- PDFs are cached in the `cache/` folder
-- PDF.js renders each page as a slide in the Electron window
-- Folder is polled every 15s (configurable) for changes
-- Modified/new/removed files trigger automatic re-conversion
+## Config Format
+
+The `config.json` on the shared drive (managed by Server) looks like:
+
+```json
+{
+  "version": 1,
+  "globalSlideDuration": 10000,
+  "schedule": {
+    "enabled": false,
+    "startTime": "08:00",
+    "endTime": "18:00",
+    "days": ["Mon","Tue","Wed","Thu","Fri"]
+  },
+  "files": [
+    {
+      "filename": "Welcome.pptx",
+      "active": true,
+      "slideDuration": null,
+      "order": 0
+    }
+  ]
+}
+```

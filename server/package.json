@@ -1,0 +1,14 @@
+{
+  "name": "glotv-server",
+  "version": "1.0.0",
+  "description": "GloTv admin/config app — manage slideshow settings",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "author": "LittleBennos",
+  "license": "MIT",
+  "dependencies": {
+    "electron": "^28.0.0"
+  }
+}
